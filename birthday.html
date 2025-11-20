@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Birthday Mohini</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Added Sacramento for Signature Look -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Sacramento&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* --- Base Settings --- */
+    html, body { 
+      height: 100%; 
+      overflow: hidden; 
+      background: #0f172a;
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: white;
+      background: radial-gradient(circle at 50% 0%, #2e1065, #020617 90%);
+    }
+
+    /* --- Typography --- */
+    .font-script { font-family: "Great Vibes", cursive; }
+    .font-signature { font-family: "Sacramento", cursive; } /* New Signature Font */
+    
+    /* --- Animations --- */
+    @keyframes floatUp {
+      0% { transform: translateY(120vh) rotate(0deg); opacity: 0.8; }
+      100% { transform: translateY(-20vh) rotate(20deg); opacity: 0.8; }
+    }
+
+    @keyframes flicker {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05) skewX(1deg); opacity: 0.9; }
+    }
+    
+    @keyframes float-idle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+    }
+
+    @keyframes smokeRise {
+      0% { opacity: 0.8; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-50px) scale(2); }
+    }
+    
+    @keyframes popIn {
+        0% { transform: scale(0); opacity: 0; }
+        80% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        to { opacity: 0; transform: scale(1.5); }
+    }
+
+    .animate-flicker { animation: flicker 0.1s infinite alternate; }
+    .animate-float { animation: float-idle 3s ease-in-out infinite; }
+    .animate-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-fade-out { animation: fadeOut 1s forwards; }
+    
+    /* --- Glassmorphism --- */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* --- Realistic Balloon CSS --- */
+    .balloon {
+      position: absolute;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      pointer-events: none;
+      box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), inset 10px 10px 20px rgba(255,255,255,0.4);
+      z-index: 0;
+    }
+    /* Balloon String */
+    .balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 40px;
+      background: rgba(255,255,255,0.4);
+    }
+
+    /* --- Floating Emojis in Background --- */
+    .bg-emoji {
+        position: absolute;
+        font-size: 2rem;
+        opacity: 0.4;
+        pointer-events: none;
+        filter: blur(1px);
+        z-index: 0;
+    }
+
+    /* --- Interactive Elements --- */
+    .sticker {
+      position: absolute;
+      cursor: grab;
+      touch-action: none; /* Critical for mobile drag */
+      user-select: none;
+      transition: transform 0.1s;
+      z-index: 50;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
+    .sticker:active { cursor: grabbing; transform: scale(1.2); }
+
+    /* --- Cake Cutting Specifics --- */
+    .cake-container {
+        position: relative;
+        transition: transform 0.3s;
+    }
+    .cake-half { transition: transform 1.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 1s; }
+  </style>
+</head>
+<body>
+
+  <!-- Main App Container -->
+  <div id="app" class="relative w-full h-full overflow-hidden"></div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    (function() {
+      const app = document.getElementById('app');
+
+      // --- 0. Sound Engine ---
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      function playPopSound() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+
+      function playTadaSound() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            const startTime = audioCtx.currentTime + (i * 0.08);
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.2, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.6);
+        });
+      }
+
+      // --- 1. Helper Functions ---
+      function el(tag, props = {}, ...children) {
+        const element = document.createElement(tag);
+        for (const [key, value] of Object.entries(props)) {
+          if (key === 'style') {
+            Object.assign(element.style, value);
+          } else if (key.startsWith('on') && typeof value === 'function') {
+            const eventName = key.substring(2).toLowerCase();
+            element.addEventListener(eventName, value);
+          } else if (key === 'className') {
+            element.className = value;
+          } else if (key === 'innerHTML') {
+            element.innerHTML = value;
+          } else {
+            element.setAttribute(key, value);
+          }
+        }
+        children.forEach(child => {
+          if (typeof child === 'string' || typeof child === 'number') {
+            element.appendChild(document.createTextNode(child));
+          } else if (child instanceof Node) {
+            element.appendChild(child);
+          }
+        });
+        return element;
+      }
+
+      // Hardcoded wishes
+      const getSimpleWish = async (name) => {
+        await new Promise(resolve => setTimeout(resolve, 800)); 
+        const wishes = [
+          `Happy Birthday ${name}! 🌟 May your day be filled with laughter, love, and lots of cake!`,
+          `To ${name}: Keep shining bright like the diamond you are! 💎`,
+          `Wishing you 365 days of joy, ${name}. Have a blast! 🚀`,
+          `Another year wiser, another year cooler. Happy Birthday! 😎`,
+          `May all your birthday wishes come true today! ✨`
+        ];
+        return wishes[Math.floor(Math.random() * wishes.length)];
+      };
+
+      // --- 2. Components ---
+
+      // Background Effect (Mixed Balloons & Emojis)
+      function createBackground() {
+        const container = el('div', { className: 'absolute inset-0 pointer-events-none z-0' });
+        const colors = ['rgba(255, 99, 132, 0.9)', 'rgba(54, 162, 235, 0.9)', 'rgba(255, 206, 86, 0.9)', 'rgba(153, 102, 255, 0.9)', 'rgba(75, 192, 192, 0.9)'];
+        const bgEmojis = ['🎀', '🎁', '✨', '🎂', '🎉'];
+
+        for (let i = 0; i < 18; i++) {
+          const isBalloon = Math.random() > 0.4; // 60% chance of balloon, 40% emoji
+          const delay = Math.random() * -15;
+          const duration = 12 + Math.random() * 10;
+          const leftPos = Math.random() * 95;
+
+          if (isBalloon) {
+             const size = Math.random() * 50 + 60; 
+             const color = colors[i % colors.length];
+             const balloon = el('div', { 
+                className: 'balloon',
+                style: {
+                  width: `${size}px`, height: `${size * 1.2}px`,
+                  left: `${leftPos}%`,
+                  background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), ${color} 40%, rgba(0,0,0,0.2) 90%)`,
+                  animation: `floatUp ${duration}s linear infinite`,
+                  animationDelay: `${delay}s`
+                }
+              });
+              container.appendChild(balloon);
+          } else {
+              const emoji = bgEmojis[Math.floor(Math.random() * bgEmojis.length)];
+              const size = 2 + Math.random() * 2; // rem
+              const em = el('div', {
+                  className: 'bg-emoji',
+                  style: {
+                      fontSize: `${size}rem`,
+                      left: `${leftPos}%`,
+                      animation: `floatUp ${duration + 5}s linear infinite`,
+                      animationDelay: `${delay}s`
+                  }
+              }, emoji);
+              container.appendChild(em);
+          }
+        }
+        return container;
+      }
+
+      // Stage 1: The Candle Blow
+      function StageOne(onNext) {
+        let isBlowing = false;
+        const flame = el('div', { className: 'w-5 h-8 bg-orange-400 rounded-full animate-flicker mx-auto shadow-[0_0_25px_orange]' });
+        const candle = el('div', { className: 'relative mx-auto mt-8 transition-transform duration-500' },
+          el('div', { className: 'absolute -top-8 left-1/2 -translate-x-1/2' }, flame),
+          el('div', { className: 'w-8 h-32 bg-gradient-to-b from-rose-300 to-rose-500 rounded-sm mx-auto border-2 border-rose-600/20 shadow-lg' })
+        );
+
+        const blowCandle = () => {
+          if (isBlowing) return;
+          isBlowing = true;
+          if(audioCtx.state === 'suspended') audioCtx.resume();
+          flame.className = 'w-5 h-8 rounded-full mx-auto opacity-0 transition-opacity duration-500';
+          const smoke = el('div', { 
+            className: 'absolute -top-12 left-1/2 -translate-x-1/2 text-4xl text-gray-400 font-bold opacity-80',
+            style: { animation: 'smokeRise 2s forwards' }
+          }, '💨');
+          candle.appendChild(smoke);
+          btn.innerText = "Make a Wish...";
+          btn.className = "mt-12 px-8 py-3 bg-gray-600 text-gray-300 font-bold rounded-full opacity-80 cursor-not-allowed";
+          setTimeout(() => { onNext(); }, 2200);
+        };
+
+        const btn = el('button', { 
+          className: 'mt-12 px-8 py-3 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-full transition-all shadow-[0_0_20px_rgba(244,63,94,0.6)] active:scale-95 z-10 text-lg',
+          onClick: blowCandle
+        }, 'Blow Out Candle');
+
+        return el('div', { className: 'flex flex-col items-center justify-center h-full z-10 relative p-4 text-center animate-pop' },
+          el('h1', { className: 'text-5xl md:text-7xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-rose-200 to-indigo-200 drop-shadow-lg' }, 'Make a Wish'),
+          el('p', { className: 'text-xl text-gray-200 mb-10 font-light' }, 'Close your eyes, take a deep breath...'),
+          el('div', { className: 'scale-125 mb-6' }, candle),
+          btn
+        );
+      }
+
+      // Stage 2: The Cake Cut -> Message
+      function StageTwo(onNext) {
+        const cakeImgUrl = 'https://img.icons8.com/3d-fluency/800/birthday-cake.png'; 
+        const leftHalf = el('div', { className: 'cake-half absolute top-0 left-0 w-1/2 h-full overflow-hidden z-10' }, el('img', { src: cakeImgUrl, className: 'absolute top-0 left-0 w-[200%] h-full object-contain drop-shadow-xl' }));
+        const rightHalf = el('div', { className: 'cake-half absolute top-0 right-0 w-1/2 h-full overflow-hidden z-10' }, el('img', { src: cakeImgUrl, className: 'absolute top-0 right-0 w-[200%] h-full object-contain drop-shadow-xl' }));
+        const cakeWrapper = el('div', { className: 'cake-container animate-float relative w-72 h-72 md:w-96 md:h-96 mx-auto mt-8' }, leftHalf, rightHalf);
+        
+        // Container for the whole stage
+        const container = el('div', { className: 'flex flex-col items-center justify-center h-full z-10 relative p-4 text-center animate-pop' },
+          // UPDATED FONTS: Signature Style
+          el('h1', { className: 'text-6xl md:text-8xl font-signature text-yellow-300 mb-2 drop-shadow-md' }, 'Happy Birthday'),
+          el('h2', { className: 'text-5xl md:text-7xl font-signature text-white mb-6' }, 'Mohini'),
+          cakeWrapper
+        );
+
+        const cutBtn = el('button', { 
+          className: 'mt-12 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all shadow-[0_0_15px_rgba(79,70,229,0.5)] active:scale-95 z-10 text-lg',
+          onClick: () => performCut()
+        }, 'Cut the Cake 🔪');
+        container.appendChild(cutBtn);
+
+        function performCut() {
+          cakeWrapper.classList.remove('animate-float');
+          playPopSound();
+          playTadaSound();
+          leftHalf.style.transform = 'translate(-60px, 20px) rotate(-15deg)';
+          rightHalf.style.transform = 'translate(60px, 20px) rotate(15deg)';
+          leftHalf.style.opacity = '0.9';
+          rightHalf.style.opacity = '0.9';
+          confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 }, colors: ['#FCD34D', '#F87171', '#60A5FA'] });
+          
+          cutBtn.style.display = 'none'; // Hide cut button
+
+          // Show Message Logic
+          setTimeout(() => {
+             showMessageOverlay();
+          }, 1500);
+        }
+
+        function showMessageOverlay() {
+            const msgText = `Happy Birthday, Mohini 🎉🎂💐
+Many many happy returns of the day 🥳✨
+May this year bring you success, happiness, and prosperity 💫🌈💰
+Your big brother blesses you with good health, joy, and endless love ❤🤗🙏
+You’re not just my sister — you’re the heartbeat of this family 💖🏡
+Your smile makes even the toughest days brighter 😊🌞💛
+Stay happy, stay loved, and keep shining always 🌟✨🌹`;
+
+            const overlay = el('div', { 
+                className: 'absolute inset-0 z-50 flex items-center justify-center p-4 animate-pop backdrop-blur-sm bg-black/40'
+            }, 
+                el('div', { className: 'glass-panel w-full max-w-md max-h-[80vh] overflow-y-auto p-6 md:p-8 rounded-2xl flex flex-col items-center text-center' },
+                    el('h3', { className: 'font-script text-4xl text-pink-400 mb-4' }, 'A Special Note'),
+                    el('div', { className: 'text-lg leading-relaxed text-gray-100 whitespace-pre-line mb-8 font-medium' }, msgText),
+                    el('button', { 
+                        className: 'px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-full shadow-lg active:scale-95 transition-transform',
+                        onClick: onNext
+                    }, 'Enter Party 🎉')
+                )
+            );
+            container.appendChild(overlay);
+        }
+
+        return container;
+      }
+
+      // Stage 3: The Party Dashboard
+      function StageThree() {
+        setTimeout(() => {
+          playTadaSound();
+          const duration = 3000;
+          const end = Date.now() + duration;
+          (function frame() {
+            confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
+            confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+            if (Date.now() < end) requestAnimationFrame(frame);
+          }());
+        }, 500);
+
+        const triggerConfetti = () => {
+            playPopSound();
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        };
+
+        const handleDrag = (e) => {
+          const target = e.target;
+          target.setPointerCapture(e.pointerId);
+          const offsetX = e.clientX - target.getBoundingClientRect().left;
+          const offsetY = e.clientY - target.getBoundingClientRect().top;
+          target.style.transform = "scale(1.2) rotate(5deg)";
+          const move = (ev) => {
+            target.style.left = `${ev.clientX - offsetX}px`;
+            target.style.top = `${ev.clientY - offsetY}px`;
+          };
+          const stop = () => {
+            target.style.transform = "scale(1) rotate(0deg)";
+            target.removeEventListener('pointermove', move);
+            target.removeEventListener('pointerup', stop);
+          };
+          target.addEventListener('pointermove', move);
+          target.addEventListener('pointerup', stop);
+        };
+
+        const addSticker = () => {
+          playPopSound();
+          const stickers = ['🎂', '🎁', '🎈', '🥳', '💖', '🦄', '🎵', '🔥', '🌟'];
+          const char = stickers[Math.floor(Math.random() * stickers.length)];
+          const s = el('div', { 
+            className: 'sticker text-5xl',
+            style: { left: Math.random() * 80 + 10 + '%', top: Math.random() * 50 + 20 + '%' },
+            onPointerDown: handleDrag
+          }, char);
+          document.body.appendChild(s);
+          
+          // Auto remove after 5 seconds (Fade out effect)
+          setTimeout(() => {
+              s.classList.add('animate-fade-out');
+              setTimeout(() => s.remove(), 1000);
+          }, 5000);
+        };
+
+        const wishResult = el('div', { className: 'min-h-[80px] flex items-center justify-center mt-4 px-2' });
+        
+        const generateWish = async (btn) => {
+          const originalText = btn.innerText;
+          btn.disabled = true;
+          playPopSound();
+          btn.innerHTML = '<div class="flex items-center gap-2"><span class="animate-spin">✨</span> Magic...</div>';
+          const text = await getSimpleWish("Mohini");
+          playTadaSound();
+          wishResult.innerHTML = `
+            <div class="animate-pop bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-lg">
+              <p class="text-lg md:text-xl italic font-medium text-pink-200">"${text}"</p>
+            </div>`;
+          btn.disabled = false;
+          btn.innerText = originalText;
+        };
+
+        const card = el('div', { className: 'glass-panel w-full max-w-3xl p-6 md:p-8 rounded-3xl flex flex-col items-center text-center mx-4 mb-20 mt-10 animate-pop' },
+          el('h1', { className: 'font-script text-5xl md:text-7xl mb-2 text-pink-400 drop-shadow-lg' }, "Let's Party!"),
+          el('div', { className: 'w-full mb-6 rounded-xl overflow-hidden shadow-2xl mt-4 border border-white/10' },
+             el('div', { innerHTML: '<iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/3yujfoSRbOL3u6mYVI6vKx?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' })
+          ),
+          el('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-3 w-full' },
+            el('button', { className: 'px-4 py-3 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 rounded-xl font-bold transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-lg', onClick: triggerConfetti }, '🎉 Confetti'),
+            el('button', { className: 'px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-lg', onClick: addSticker }, '🦄 Sticker'),
+            el('button', { className: 'px-4 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-lg', onClick: (e) => generateWish(e.currentTarget) }, '✨ Magic Wish')
+          ),
+          wishResult
+        );
+
+        return el('div', { className: 'flex items-center justify-center min-h-full w-full z-10 relative py-10 overflow-y-auto' }, card);
+      }
+
+      // --- 4. Init ---
+      function init() {
+        app.appendChild(createBackground());
+        const container = el('div', { className: 'absolute inset-0 z-10 overflow-y-auto overflow-x-hidden' });
+        app.appendChild(container);
+        const renderStage = (stageFn) => {
+          container.innerHTML = '';
+          container.appendChild(stageFn);
+          if(window.lucide) lucide.createIcons();
+        };
+        renderStage(StageOne(() => {
+          renderStage(StageTwo(() => {
+            renderStage(StageThree());
+          }));
+        }));
+      }
+      init();
+    })();
+  </script>
+</body>
+</html>
